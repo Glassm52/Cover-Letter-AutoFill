@@ -36,8 +36,24 @@ def select_file(initialdir='/', filetypes = ('All files', '*.*')):
             message='No file was chosen.'
         )
         return None
-    
 
+
+def select_directory(initialdir='/'):
+    folder_path = fd.askdirectory(
+    title="Select a folder",
+    initialdir=initialdir
+    )
+
+    if folder_path:
+            return folder_path
+    else:
+        showinfo(
+            title='No folder Selected',
+            message='No folder was chosen.'
+        )
+        return None
+
+    
 def replace_keyords(document, keyword, keyword_responses):
     for paragraph in document.paragraphs:
         for run in paragraph.runs:
@@ -48,7 +64,6 @@ def replace_keyords(document, keyword, keyword_responses):
                     print(paragraph.text)
 
     return document
-
 
 
 def start():
@@ -90,11 +105,20 @@ def start():
         for element in resume_document.element.body:
             document.element.body.append(deepcopy(element))
 
+    # save the file
     file_name = input("File name:")
-    file_dir = f"{applicationPath}/saved/{file_name}.docx"
+
+    print("Select save folder in the file explorer window or exit to put in default saved file")
+    folder_path = select_directory(applicationPath)  
+    if folder_path is None:
+        folder_path = f"{applicationPath}/saved"
+        os.makedirs(folder_path, exist_ok=True)
+
+    file_dir = os.path.join(folder_path, f"{file_name}.docx")
     document.save(file_dir)
     time.sleep(2)
 
+    # open the file in word 
     try:
         word = win32com.client.Dispatch("Word.Application")
         word.Visible = True
