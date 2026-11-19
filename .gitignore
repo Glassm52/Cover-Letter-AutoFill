@@ -1,4 +1,6 @@
-resume/Resume 2026.docx
-saved/TEST.docx
-templates/it_template.docx
-.gitignore
+saved/*
+resume/*
+templates/*
+
+!resume/Dummy Resume.docx
+!templates/template_template.docx

@@ -1,11 +1,15 @@
 import sys, os, datetime, time
-
 import traceback
+from pathlib import Path
 
-import win32com.client
+if sys.platform == "win32":
+    import win32com.client
+
+#import requests
+#from html.parser import HTMLParser
 
 from docx import Document
-from copy import deepcopy
+from docxcompose.composer import Composer
 
 import tkinter as tk
 from tkinter import filedialog as fd
@@ -17,6 +21,15 @@ if getattr(sys, 'frozen', False):
     applicationPath = os.path.dirname(sys.executable)
 else:
     applicationPath = os.path.dirname(os.path.abspath(__file__))
+
+output_dir = Path(applicationPath, "saved")
+output_dir.mkdir(parents=True, exist_ok=True)
+
+output_dir = Path(applicationPath, "templates")
+output_dir.mkdir(parents=True, exist_ok=True)
+
+output_dir = Path(applicationPath, "resume")
+output_dir.mkdir(parents=True, exist_ok=True)
 
 
 def select_file(initialdir='/', filetypes = ('All files', '*.*')):
@@ -74,7 +87,12 @@ def start():
     )
 
     print("Select Cover Letter Template (must be .docx) in the file explorer window")
-    selected_filepath = select_file(applicationPath, filetypes)
+    selected_filepath = select_file(Path(applicationPath, "templates"), filetypes)
+    if selected_filepath == None:
+        print("Template file must be selected. Stoping Application.")
+        return
+
+
     document = Document(selected_filepath)
 
     keywords = ["DATE", "ADDRESS", "POSITION", "COMPANY"]
@@ -96,20 +114,20 @@ def start():
 
     # appending the resume to the coverletter 
     print("Select Resume (must be .docx) in the file explorer window or exit to skip")
-    selected_resume = select_file(applicationPath, filetypes)       
+    selected_resume = select_file(Path(applicationPath, "resume"), filetypes)       
 
     if selected_resume is not None:
-        document.add_page_break()
+        # document.add_page_break()
         resume_document = Document(selected_resume)
 
-        for element in resume_document.element.body:
-            document.element.body.append(deepcopy(element))
+        composer = Composer(document)
+        composer.append(resume_document)
 
     # save the file
     file_name = input("File name:")
 
     print("Select save folder in the file explorer window or exit to put in default saved file")
-    folder_path = select_directory(applicationPath)  
+    folder_path = select_directory(Path(applicationPath, "saved"))  
     if folder_path is None:
         folder_path = f"{applicationPath}/saved"
         os.makedirs(folder_path, exist_ok=True)
@@ -120,9 +138,10 @@ def start():
 
     # open the file in word 
     try:
-        word = win32com.client.Dispatch("Word.Application")
-        word.Visible = True
-        document = word.Documents.Open(file_dir)
+        if sys.platform == "win32":
+            word = win32com.client.Dispatch("Word.Application")
+            word.Visible = True
+            document = word.Documents.Open(file_dir)
     except Exception as e: 
         traceback.print_exc()
         print("something went wrong. try opening manually")
